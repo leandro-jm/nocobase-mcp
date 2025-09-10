@@ -45,21 +45,6 @@ type SalesOrder = {
   }
 };
 
-type TicketProtocolResponse = {
-  data?: {
-    protocol?: string;
-  };
-};
-
-type TicketResponse = {
-  data?: {
-    title?: string;
-    description?: string;
-    status?: string;
-    priority?: string;
-  };
-};
-
 /**
  * Calls the API to get payment information based on document ID.
  *
@@ -108,7 +93,7 @@ async function makeRequest<T>(
  * Tool to fetch all available food items registered in the CRM.
  */
 server.tool(
-  "Alimentos",
+  "Alimentos-Tool",
   "Busca todos os alimentos disponíveis para venda cadastrado no crm para o CEP informado.",
   {
     cep: z.string().trim(),
@@ -152,16 +137,37 @@ server.tool(
   }
 );
 
+server.tool(
+  "Abrir-Carrinho-Tool",
+  "Abrir carrinho. Dados necessários: cep de entrega.",
+  {
+    cep: z.string().trim(),
+  },
+  async ({ cep }) => {    
+
+    var text: string = "Carrinho aberto com sucesso!\n\n";
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: text,
+        },
+      ],
+    };
+  }
+);
+
 /**
  * Tool to purchase food items available in the CRM.
  * It requires the food ID and quantity to be specified.
  */
 server.tool(
-  "Comprar-Alimentos",
-  "Realiza a compra de múltiplos alimentos disponíveis no CRM. Dados necessários: array de itens com ID, quantidade e preço unitário, total do pedido e cep de entrega.",
+  "Adicionar-Alimentos-Carrinho-Tool",
+  "Adicionar múltiplos alimentos. Dados necessários: array de itens com ID, quantidade e preço unitário, total do pedido e cep de entrega.",
   {
     items: z.array(z.object({
-      food_id: z.string().trim(),
+      food_id: z.number().min(1),
       quantity: z.number().min(1)
     })),
     total_order: z.number().min(0),
@@ -205,7 +211,7 @@ server.tool(
       }
     }
 
-    var text: string = "Alimentos comprados com sucesso!\n\n";
+    var text: string = "Alimentos adicionado no carrinho com sucesso!\n\n";
 
     return {
       content: [
@@ -219,36 +225,23 @@ server.tool(
 );
 
 server.tool(
-  "buscar-ticket",
-  "Solicitar informações de um ticket. Informações que o usuário deve enviar: Protocolo",
+  "Remover-Alimentos-Carrinho-Tool",
+  "Remover múltiplos alimentos. Dados necessários: array de itens com ID do alimento e ID da ordem.",
   {
-    protocol: z.string().trim(),
+    items: z.array(z.object({
+      food_id: z.number().min(1),
+      order_id: z.number().min(1)
+    }))
   },
-  async ({ protocol }) => {
-    const ticketUrl = `${API_BASE}/api/ticket:get?filter=%7B%22protocol%22%3A%20%22${protocol}%22%7D`;
-    const ticketData = await makeRequest<TicketResponse>(
-      ticketUrl,
-      "GET"
-    );
+  async ({ items }) => {    
 
-    if (!ticketData) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Não foi encontrado ticket para o protocolo informado!",
-          },
-        ],
-      };
-    }
-
-    const ticketText = `Os dados do ticket são: - Titulo: ${ticketData.data?.title} - Descrição: ${ticketData.data?.description} - Status: ${ticketData.data?.status} - Prioridade: ${ticketData.data?.priority}.`;
+    var text: string = "Segue o carrinho atualizado...!\n\n";
 
     return {
       content: [
         {
           type: "text",
-          text: ticketText,
+          text: text,
         },
       ],
     };
@@ -256,45 +249,20 @@ server.tool(
 );
 
 server.tool(
-  "abrir-ticket",
-  "Abrir um novo ticket. Informações que o usuário deve enviar: Título, Descrição",
+  "Finalizar-Carrinho-Tool",
+  "Finalizar as compras no carrinho . Dados necessários: Id da Ordem de compra.",
   {
-    title: z.string().trim(),
-    description: z.string().trim(),
+    order_id: z.number().min(0),
   },
-  async ({ title, description }) => {
-    const body = {
-      title: title,
-      description: description,
-      status: "Aberto",
-      priority: "Normal",
-    };
+  async ({ order_id }) => {    
 
-    const ticketUrl = `${API_BASE}/api/ticket:create`;
-    const ticketData = await makeRequest<TicketProtocolResponse>(
-      ticketUrl,
-      "POST",
-      body
-    );
-
-    if (!ticketData) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Failed to open the ticket",
-          },
-        ],
-      };
-    }
-
-    const responseText = `O ticket foi aberto com sucesso. Segue o numero do protocolo:  ${ticketData.data?.protocol}`;
+    var text: string = "Carrinho finalizado com sucesso!\n\n";
 
     return {
       content: [
         {
           type: "text",
-          text: responseText,
+          text: text,
         },
       ],
     };
