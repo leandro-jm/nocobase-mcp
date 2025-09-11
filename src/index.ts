@@ -170,46 +170,10 @@ server.tool(
       food_id: z.number().min(1),
       quantity: z.number().min(1)
     })),
-    total_order: z.number().min(0),
-    cep: z.string().trim(),
+    order_id: z.number().min(0),
   },
-  async ({ items, total_order, cep }) => {    
+  async ({ items, order_id }) => {    
 
-    const body = {
-      "title": "Pedido #123",
-      "total_order": total_order,
-      "status": "Realizada",
-      "cep": cep
-    };
-
-    //Create a sales order
-    const url = `${API_BASE}/api/sales_order:create`;
-    const data = await makeRequest<SalesOrder>(
-      url,
-      "POST",
-      body
-    );
-
-    if (data) {
-
-      // Associate the food items with the sales order
-      const url = `${API_BASE}/api/order_portifolio:create`;
-
-      for (const item of items) {
-
-        const bodyItem = {
-          "sales_order_id": data.data?.id,
-          "portifolio_id": item.food_id,
-          "quantity": item.quantity
-        };
-
-        const dataItem = await makeRequest<SalesOrder>(
-          url,
-          "POST",
-          bodyItem
-        );
-      }
-    }
 
     var text: string = "Alimentos adicionado no carrinho com sucesso!\n\n";
 
