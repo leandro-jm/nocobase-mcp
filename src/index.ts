@@ -187,17 +187,15 @@ server.tool(
  */
 server.tool(
   "Adicionar-Produtos-Carrinho-Tool",
-  "Adicionar múltiplos produtos no carrinho já aberto. Dados necessários: array de itens com ID do produto, quantidade, e ID da ordem.",
+  "Adicionar múltiplos produtos no carrinho já aberto. Dados necessários: ID do produto, quantidade, e ID da pedido.",
   {
-    items: z.array(z.object({
-      food_id: z.number().min(1),
-      quantity: z.number().min(1)
-    })),
+    product_id: z.number().min(1),
+    quantity: z.number().min(1),
     order_id: z.number().min(0),
   },
-  async ({ items, order_id }) => {    
+  async ({ product_id, quantity, order_id }) => {    
 
-    if (items.length === 0 || order_id <= 0 ) {
+    if (product_id <= 0 || quantity <= 0 || order_id <= 0 ) {
       return {
         content: [
           {
@@ -208,28 +206,25 @@ server.tool(
       };
     }
 
-    for (const item of items) {
+    const body = {
+      "sales_order_id": order_id,
+      "portifolio_id": product_id,
+      "quantity": quantity
+    };
 
-      const body = {
-        "sales_order_id": order_id,
-        "portifolio_id": item.food_id,
-        "quantity": item.quantity
+    const url = `${API_BASE}/api/order_portifolio:create`;
+    const data = await makeRequest<SalesOrder>(url, "POST", body);
+
+    if (!data) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Não foi possível adicionar o produto no carrinho. Tente novamente mais!",
+          },
+        ],
       };
-
-      const url = `${API_BASE}/api/order_portifolio:create`;
-      const data = await makeRequest<SalesOrder>(url, "POST", body);
-
-      if (!data) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: "Não foi possível adicionar o produto no carrinho. Tente novamente mais!",
-            },
-          ],
-        };
-      } 
-    }
+    } 
 
     return {
       content: [
