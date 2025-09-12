@@ -187,7 +187,7 @@ server.tool(
  */
 server.tool(
   "Adicionar-Produtos-Carrinho-Tool",
-  "Adicionar múltiplos produtos no carrinho já aberto. Dados necessários: ID do produto, quantidade, e ID da pedido.",
+  "Adicionar UM produto por vez no carrinho já aberto. Dados necessários: ID do produto, quantidade, e ID da pedido.",
   {
     product_id: z.number().min(1),
     quantity: z.number().min(1),
@@ -200,7 +200,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: "Não foi possivel adicionar produtos pois não foi informado os dados necessários. Tente novamente mais!",
+            text: "Não foi possivel adicionar produtos pois não foi informado os dados necessários (Produto ID, Quantidade e Pedido ID). Tente novamente mais!",
           },
         ],
       };
@@ -243,48 +243,43 @@ server.tool(
  */
 server.tool(
   "Remover-Produtos-Carrinho-Tool",
-  "Remover múltiplos produtos. Dados necessários: array de itens com ID do alimento e ID da ordem.",
+  "Remover UM produto por vez. Dados necessários: ID do produto e ID da pedido.",
   {
-    items: z.array(z.object({
-      food_id: z.number().min(1),
-      order_id: z.number().min(1)
-    }))
+    product_id: z.number().min(1),
+    order_id: z.number().min(0),
   },
-  async ({ items }) => {    
+  async ({ product_id, order_id }) => {    
 
-    if (items.length === 0 ) {
+    if (product_id <= 0 || order_id <= 0 ) {
       return {
         content: [
           {
             type: "text",
-            text: "Não foi possivel remover produto(s) pois não foi informado os dados necessários. Tente novamente mais!",
+            text: "Não foi possivel remover produto pois não foi informado os dados necessários (Produto ID e Pedido ID). Tente novamente mais!",
           },
         ],
       };
     }
 
-    for (const item of items) {
+    const url = `${API_BASE}/api/order_portifolio:destroy?filter=%7B%0A%22sales_order_id%22%3A%20${order_id}%2C%0A%22portifolio_id%22%3A%20${product_id}%0A%7D`;
+    const data = await makeRequest<SalesOrder>(url, "POST");
 
-      const url = `${API_BASE}/api/order_portifolio:destroy?filter=%7B%0A%22sales_order_id%22%3A%20${item.order_id}%2C%0A%22portifolio_id%22%3A%20${item.food_id}%0A%7D`;
-      const data = await makeRequest<SalesOrder>(url, "POST");
-
-      if (!data) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: "Não foi possível remover o produto no carrinho. Tente novamente mais!",
-            },
-          ],
-        };
-      } 
+    if (!data) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Não foi possível remover o produto no carrinho. Tente novamente mais!",
+          },
+        ],
+      };
     }
 
     return {
       content: [
         {
           type: "text",
-          text: "Produto(s) adicionado(s) no carrinho com sucesso!\n\n",
+          text: "Produto removido no carrinho com sucesso!\n\n",
         },
       ],
     };
@@ -297,7 +292,7 @@ server.tool(
  */
 server.tool(
   "Finalizar-Carrinho-Tool",
-  "Finalizar as compras no carrinho . Dados necessários: Id da Ordem de compra.",
+  "Finalizar o pedido no carrinho . Dados necessários: Id do pedido.",
   {
     order_id: z.number().min(0),
   },
