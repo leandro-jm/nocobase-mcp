@@ -195,11 +195,11 @@ server.tool(
   {
     product_id: z.number().min(1),
     quantity: z.number().min(1),
-    identify: z.number().min(0),
+    identify: z.string().trim()
   },
   async ({ product_id, quantity, identify }) => {    
 
-    if (product_id <= 0 || quantity <= 0 || identify <= 0 ) {
+    if (product_id <= 0 || quantity <= 0 || identify === "" ) {
       return {
         content: [
           {
@@ -266,11 +266,11 @@ server.tool(
   "Remover UM produto por vez. Dados necessários: ID do produto e identificador.",
   {
     product_id: z.number().min(1),
-    identify: z.number().min(0),
+    identify: z.string().trim()
   },
   async ({ product_id, identify }) => {    
 
-    if (product_id <= 0 || identify <= 0 ) {
+    if (product_id <= 0 || identify === "" ) {
       return {
         content: [
           {
@@ -329,11 +329,11 @@ server.tool(
   "Finalizar-Carrinho-Tool",
   "Finalizar o pedido no carrinho . Dados necessários: identificador.",
   {
-    identify: z.number().min(0),
+    identify: z.string().trim()
   },
   async ({ identify }) => {    
 
-    if (identify === 0 ) {
+    if (identify  === "" ) {
       return {
         content: [
           {
