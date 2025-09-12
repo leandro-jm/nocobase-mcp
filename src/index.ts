@@ -144,16 +144,20 @@ server.tool(
  */
 server.tool(
   "Abrir-Carrinho-Tool",
-  "Abrir carrinho para adicionar produtos. Dados necessários: cep de entrega.",
+  "Abrir carrinho para adicionar produtos. Dados necessários: cep de entrega e identificador.",
   {
     cep: z.string().trim(),
+    identify: z.string().trim()
   },
-  async ({ cep }) => {    
+  async ({ cep, identify }) => {    
+
+    //TODO: Finalizar todos carrinhos com status de aberto para esse identify.
 
     const body = {
       title: `Pedido para entrega no CEP ${cep}`,
       cep: cep,
-      status: "Aberto"
+      status: "Aberto",
+      identify: identify
     };
 
     const url = `${API_BASE}/api/sales_order:create`;
@@ -187,25 +191,41 @@ server.tool(
  */
 server.tool(
   "Adicionar-Produtos-Carrinho-Tool",
-  "Adicionar UM produto por vez no carrinho já aberto. Dados necessários: ID do produto, quantidade, e ID da pedido.",
+  "Adicionar UM produto por vez no carrinho já aberto. Dados necessários: ID do produto, quantidade, e identificador.",
   {
     product_id: z.number().min(1),
     quantity: z.number().min(1),
-    order_id: z.number().min(0),
+    identify: z.number().min(0),
   },
-  async ({ product_id, quantity, order_id }) => {    
+  async ({ product_id, quantity, identify }) => {    
 
-    if (product_id <= 0 || quantity <= 0 || order_id <= 0 ) {
+    if (product_id <= 0 || quantity <= 0 || identify <= 0 ) {
       return {
         content: [
           {
             type: "text",
-            text: "Não foi possivel adicionar produtos pois não foi informado os dados necessários (Produto ID, Quantidade e Pedido ID). Tente novamente mais!",
+            text: "Não foi possivel adicionar produtos pois não foi informado os dados necessários (Produto ID, Quantidade e identificador). Tente novamente mais!",
           },
         ],
       };
     }
 
+    //Recupera ID do pedido com base no identify e status aberto
+    const urlOrder = `${API_BASE}/api/sales_order:get?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7De`;
+    const dataOrder = await makeRequest<SalesOrder>(urlOrder, "GET");
+
+    if(!dataOrder || !dataOrder.data) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Não existe carrinho aberto para esse cliente. Por favor, abra o carrinho antes de adicionar produtos. Tente novamente mais!",
+          },
+        ],
+      };
+    }
+
+    const order_id = dataOrder.data.id;
     const body = {
       "sales_order_id": order_id,
       "portifolio_id": product_id,
@@ -243,24 +263,39 @@ server.tool(
  */
 server.tool(
   "Remover-Produtos-Carrinho-Tool",
-  "Remover UM produto por vez. Dados necessários: ID do produto e ID da pedido.",
+  "Remover UM produto por vez. Dados necessários: ID do produto e identificador.",
   {
     product_id: z.number().min(1),
-    order_id: z.number().min(0),
+    identify: z.number().min(0),
   },
-  async ({ product_id, order_id }) => {    
+  async ({ product_id, identify }) => {    
 
-    if (product_id <= 0 || order_id <= 0 ) {
+    if (product_id <= 0 || identify <= 0 ) {
       return {
         content: [
           {
             type: "text",
-            text: "Não foi possivel remover produto pois não foi informado os dados necessários (Produto ID e Pedido ID). Tente novamente mais!",
+            text: "Não foi possivel remover produto pois não foi informado os dados necessários (Produto ID e identificador). Tente novamente mais!",
           },
         ],
       };
     }
 
+    const urlOrder = `${API_BASE}/api/sales_order:get?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7De`;
+    const dataOrder = await makeRequest<SalesOrder>(urlOrder, "GET");
+
+    if(!dataOrder || !dataOrder.data) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Não existe carrinho aberto para esse cliente. Por favor, abra o carrinho antes de remover produtos. Tente novamente mais!",
+          },
+        ],
+      };
+    }
+
+    const order_id = dataOrder.data.id;
     const url = `${API_BASE}/api/order_portifolio:destroy?filter=%7B%0A%22sales_order_id%22%3A%20${order_id}%2C%0A%22portifolio_id%22%3A%20${product_id}%0A%7D`;
     const data = await makeRequest<SalesOrder>(url, "POST");
 
@@ -292,13 +327,13 @@ server.tool(
  */
 server.tool(
   "Finalizar-Carrinho-Tool",
-  "Finalizar o pedido no carrinho . Dados necessários: Id do pedido.",
+  "Finalizar o pedido no carrinho . Dados necessários: identificador.",
   {
-    order_id: z.number().min(0),
+    identify: z.number().min(0),
   },
-  async ({ order_id }) => {    
+  async ({ identify }) => {    
 
-    if (order_id === 0 ) {
+    if (identify === 0 ) {
       return {
         content: [
           {
@@ -309,7 +344,7 @@ server.tool(
       };
     }
 
-    const url = `${API_BASE}/api/sales_order:update?filterByTk=${order_id}`;
+    const url = `${API_BASE}/api/sales_order:update?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7D`;
     const data = await makeRequest<SalesOrder>(url, "POST", {status: "Finalizado"});
 
     if (!data) {
