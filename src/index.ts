@@ -211,8 +211,8 @@ server.tool(
     }
 
     //Recupera ID do pedido com base no identify e status aberto
-    const urlOrder = `${API_BASE}/api/sales_order:get?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7De`;
-    const dataOrder = await makeRequest<any>(urlOrder, "GET");
+    const urlOrder = `${API_BASE}/api/sales_order:get?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7D`;
+    const dataOrder = await makeRequest<SalesOrder>(urlOrder, "GET");
 
     console.info(`Data Order: ${dataOrder}`);
 
@@ -283,8 +283,8 @@ server.tool(
       };
     }
 
-    const urlOrder = `${API_BASE}/api/sales_order:get?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7De`;
-    const dataOrder = await makeRequest<any>(urlOrder, "GET");
+    const urlOrder = `${API_BASE}/api/sales_order:get?filter=%7B%0A%20%20%20%20%22status%22%3A%20%22Aberto%22%2C%0A%20%20%20%20%22identify%22%3A%20%22${identify}%22%0A%7D`;
+    const dataOrder = await makeRequest<SalesOrder>(urlOrder, "GET");
 
     if(!dataOrder || !dataOrder.data) {
       return {
